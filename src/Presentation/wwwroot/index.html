@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отправка данных</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #1e3a8a;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background-color: #1e40af;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+            button:hover {
+                background-color: #2563eb;
+                transform: scale(1.05);
+            }
+
+            button:active {
+                transform: scale(0.95);
+            }
+
+            button:disabled {
+                background-color: #b0c4de;
+                cursor: not-allowed;
+            }
+
+        .loading {
+            position: relative;
+            display: inline-block;
+        }
+
+            .loading:after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 20px;
+                height: 20px;
+                border: 4px solid white;
+                border-top: 4px solid transparent;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                transform: translate(-50%, -50%);
+            }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Отправка данных о движении мыши</h1>
+    <button id="sendBtn">Отправить данные</button>
+
+    <script>
+        let mouseData = [];
+        const MAX_POINTS = 1000;
+
+        document.addEventListener('mousemove', e => {
+            if (mouseData.length < MAX_POINTS) {
+                mouseData.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    t: new Date().toLocaleString()
+                });
+            }
+        });
+
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const button = document.getElementById('sendBtn');
+            try {
+                button.disabled = true;  // Отключаем кнопку, чтобы предотвратить повторные клики
+                button.innerHTML = 'Отправка... <span class="loading"></span>';  // Показываем анимацию ожидания
+
+                const response = await fetch('/api/tracking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mouseData)
+                });
+
+                if (response.ok) {
+                    mouseData = [];
+                    alert('Данные успешно отправлены!');
+                    button.innerHTML = 'Отправить данные';  // Возвращаем текст на кнопку
+                } else {
+                    throw new Error('Ошибка при отправке данных');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при отправке данных.');
+                button.innerHTML = 'Отправить данные';  // Возвращаем текст на кнопку
+            } finally {
+                button.disabled = false;  // Включаем кнопку обратно
+            }
+        });
+    </script>
+</body>
+</html>
